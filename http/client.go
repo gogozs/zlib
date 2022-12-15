@@ -60,15 +60,15 @@ func (c *Client) SetProxy(proxy *Proxy) {
 		return
 	}
 	proxyURL := fmt.Sprintf("http://%s:%s@%s:%d", proxy.Username, proxy.Password, proxy.Host, proxy.Port)
-	log.Info(context.Background(), "proxyURL: %s", proxyURL)
+	log.InfoContext(context.Background(), "proxyURL: %s", proxyURL)
 	c.client.SetProxy(proxyURL)
 }
 
 func (c *Client) Get(url string, opts ...RequestOptionFunc) (rsp *resty.Response, err error) {
 	options := c.getRequestOptions(opts...)
-	log.Debug(context.Background(), "HttpClient Start Get url: %s", url)
+	log.DebugContext(context.Background(), "HttpClient Start Get url: %s", url)
 	defer func() {
-		log.Debug(context.Background(), "HttpClient Start Get url done. err: %v", err)
+		log.DebugContext(context.Background(), "HttpClient Start Get url done. err: %v", err)
 	}()
 	resp, err := c.client.R().
 		EnableTrace().
@@ -82,9 +82,9 @@ func (c *Client) Get(url string, opts ...RequestOptionFunc) (rsp *resty.Response
 
 func (c *Client) Post(url string, body interface{}, opts ...RequestOptionFunc) (rsp *resty.Response, err error) {
 	options := c.getRequestOptions(opts...)
-	log.Debug(context.Background(), "HttpClient Start Get url: %s", url)
+	log.DebugContext(context.Background(), "HttpClient Start Post url: %s", url)
 	defer func() {
-		log.Debug(context.Background(), "HttpClient Start Get url done. err: %v", err)
+		log.DebugContext(context.Background(), "HttpClient Start Post url done. err: %v", err)
 	}()
 	resp, err := c.client.R().
 		SetBody(body).
