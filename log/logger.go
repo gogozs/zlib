@@ -54,22 +54,42 @@ func Sync() {
 	globalLogger.Sync()
 }
 
-func Debug(ctx context.Context, msg string, args ...interface{}) {
+func Debug(msg string, args ...interface{}) {
+	globalLogger.Debug(context.Background(), msg, args...)
+}
+
+func Info(msg string, args ...interface{}) {
+	globalLogger.Info(context.Background(), msg, args...)
+}
+
+func Warn(msg string, args ...interface{}) {
+	globalLogger.Warn(context.Background(), msg, args...)
+}
+
+func Error(msg string, args ...interface{}) {
+	globalLogger.Error(context.Background(), msg, args...)
+}
+
+func Fatal(msg string, args ...interface{}) {
+	globalLogger.Fatal(context.Background(), msg, args...)
+}
+
+func DebugContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Debug(ctx, msg, args...)
 }
 
-func Info(ctx context.Context, msg string, args ...interface{}) {
+func InfoContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Info(ctx, msg, args...)
 }
 
-func Warn(ctx context.Context, msg string, args ...interface{}) {
+func WarnContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Warn(ctx, msg, args...)
 }
 
-func Error(ctx context.Context, msg string, args ...interface{}) {
+func ErrorContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Error(ctx, msg, args...)
 }
 
-func Fatal(ctx context.Context, msg string, args ...interface{}) {
+func FatalContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Fatal(ctx, msg, args...)
 }
