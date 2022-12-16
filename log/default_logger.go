@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+
 	"go.uber.org/zap"
 )
 
@@ -38,5 +39,5 @@ func (l Logger) Fatal(ctx context.Context, msg string, args ...interface{}) {
 }
 
 func (l Logger) Sync() {
-	l.logger.Sync()
+	_ = l.logger.Sync()
 }
