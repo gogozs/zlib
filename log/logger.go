@@ -2,9 +2,10 @@ package log
 
 import (
 	"context"
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 )
 
 type (
@@ -33,7 +34,7 @@ func init() {
 	globalLogger = NewLogger(logger.Sugar())
 }
 
-func SetLogger(level string) {
+func SetLoggerLevel(level string) {
 	zapLevel, _ := zapcore.ParseLevel(level)
 	core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()),
