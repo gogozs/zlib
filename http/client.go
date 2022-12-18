@@ -109,3 +109,7 @@ func (c *Client) getRequestOptions(opts ...RequestOptionFunc) RequestOptions {
 	}
 	return requestOptions
 }
+
+func (c *Client) GetRestyClient() *resty.Client {
+	return c.client
+}
