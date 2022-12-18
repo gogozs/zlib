@@ -2,11 +2,12 @@ package http
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/gogozs/zlib/log"
-	"time"
 )
 
 type (
@@ -19,8 +20,13 @@ var defaultClientOptions = ClientOptions{
 	maxRetries:  3,
 	waitTime:    time.Second * 5,
 	maxWaitTime: time.Second * 20,
-	retryAfterFunc: func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-		return 0, errors.New("quota exceeded")
+	retryConditionFunc: func(response *resty.Response, err error) bool {
+		if response == nil ||
+			response.StatusCode() == 0 ||
+			(response.StatusCode() >= http.StatusLocked && response.StatusCode() < http.StatusNotExtended) {
+			return true
+		}
+		return false
 	},
 }
 
@@ -46,9 +52,8 @@ func NewHttpClient(options ...ClientOptionFunc) *Client {
 		// MaxWaitTime can be overridden as well.
 		// Default is 2 seconds.
 		SetRetryMaxWaitTime(clientOptions.maxWaitTime).
-		// SetRetryAfter sets callback to calculate wait time between retries.
-		// Default (nil) implies exponential backoff with jitter
-		SetRetryAfter(clientOptions.retryAfterFunc)
+		AddRetryCondition(clientOptions.retryConditionFunc)
+
 	c := &Client{client: client}
 	c.SetProxy(clientOptions.proxy)
 

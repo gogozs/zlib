@@ -1,17 +1,18 @@
 package http
 
 import (
-	"github.com/go-resty/resty/v2"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 type (
 	ClientOptions struct {
-		proxy          *Proxy
-		maxRetries     int
-		waitTime       time.Duration
-		maxWaitTime    time.Duration
-		retryAfterFunc resty.RetryAfterFunc
+		proxy              *Proxy
+		maxRetries         int
+		waitTime           time.Duration
+		maxWaitTime        time.Duration
+		retryConditionFunc resty.RetryConditionFunc
 	}
 	Proxy struct {
 		Host     string
@@ -42,11 +43,5 @@ func WithWaitTime(waitTime time.Duration) ClientOptionFunc {
 func WithMaxWaitTime(maxWaitTime time.Duration) ClientOptionFunc {
 	return func(o *ClientOptions) {
 		o.maxWaitTime = maxWaitTime
-	}
-}
-
-func WithRetryAfterFunc(retryAfterFunc resty.RetryAfterFunc) ClientOptionFunc {
-	return func(o *ClientOptions) {
-		o.retryAfterFunc = retryAfterFunc
 	}
 }
