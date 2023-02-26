@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/gogozs/zlib/log"
+	"github.com/gogozs/zlib/xlog"
 )
 
 type (
@@ -65,15 +65,15 @@ func (c *Client) SetProxy(proxy *Proxy) {
 		return
 	}
 	proxyURL := fmt.Sprintf("http://%s:%s@%s:%d", proxy.Username, proxy.Password, proxy.Host, proxy.Port)
-	log.InfoContext(context.Background(), "proxyURL: %s", proxyURL)
+	xlog.InfoContext(context.Background(), "proxyURL: %s", proxyURL)
 	c.client.SetProxy(proxyURL)
 }
 
 func (c *Client) Get(url string, opts ...RequestOptionFunc) (rsp *resty.Response, err error) {
 	options := c.getRequestOptions(opts...)
-	log.DebugContext(context.Background(), "HttpClient Start Get url: %s", url)
+	xlog.DebugContext(context.Background(), "HttpClient Start Get url: %s", url)
 	defer func() {
-		log.DebugContext(context.Background(), "HttpClient Start Get url done. err: %v", err)
+		xlog.DebugContext(context.Background(), "HttpClient Start Get url done. err: %v", err)
 	}()
 	resp, err := c.client.R().
 		EnableTrace().
@@ -87,9 +87,9 @@ func (c *Client) Get(url string, opts ...RequestOptionFunc) (rsp *resty.Response
 
 func (c *Client) Post(url string, body interface{}, opts ...RequestOptionFunc) (rsp *resty.Response, err error) {
 	options := c.getRequestOptions(opts...)
-	log.DebugContext(context.Background(), "HttpClient Start Post url: %s", url)
+	xlog.DebugContext(context.Background(), "HttpClient Start Post url: %s", url)
 	defer func() {
-		log.DebugContext(context.Background(), "HttpClient Start Post url done. err: %v", err)
+		xlog.DebugContext(context.Background(), "HttpClient Start Post url done. err: %v", err)
 	}()
 	resp, err := c.client.R().
 		SetBody(body).
