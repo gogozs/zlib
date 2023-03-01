@@ -3,23 +3,29 @@ package serverinterceptors
 import (
 	"context"
 
+	"github.com/gogozs/zlib/auth"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-// refer to https://dev.to/techschoolguru/use-grpc-interceptor-for-authorization-with-jwt-1c5h
-
 type (
 	AuthInterceptor struct {
-		tokenValidator TokenValidator
+		authValidator AuthValidator
 	}
 
-	TokenValidator interface {
-		Verify(token string) error
+	AuthValidator interface {
+		Verify(token string) (uint64, error)
 	}
 )
+
+func NewAuthInterceptor(authValidator AuthValidator) *AuthInterceptor {
+	return &AuthInterceptor{
+		authValidator: authValidator,
+	}
+}
 
 func (a *AuthInterceptor) Unary(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
@@ -54,9 +60,19 @@ func (a *AuthInterceptor) auth(ctx context.Context, method string) error {
 	}
 
 	token := values[0]
-	if err := a.tokenValidator.Verify(token); err != nil {
+	userID, err := a.authValidator.Verify(token)
+	if err != nil {
 		return status.Errorf(codes.Unauthenticated, "token is not provided")
 	}
-
+	auth.WithAuth(ctx, userID)
 	return nil
+}
+
+func ParseUserID(ctx context.Context) uint64 {
+	value := auth.ParseAuth(ctx)
+	userID, ok := value.(uint64)
+	if ok {
+		return 0
+	}
+	return userID
 }
