@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/gogozs/zlib/xtrace"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -95,4 +97,23 @@ func ErrorContext(ctx context.Context, msg string, args ...interface{}) {
 
 func FatalContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Fatal(ctx, msg, args...)
+}
+
+func WrapTraceWithTraceID(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, traceKey{}, traceID)
+}
+
+func TraceID(ctx context.Context) (bool, string) {
+	v := ctx.Value(traceKey{})
+	if v != nil {
+		return true, v.(string)
+	}
+	return false, ""
+}
+
+func WrapTrace(ctx context.Context) context.Context {
+	if exist, _ := TraceID(ctx); exist {
+		return ctx
+	}
+	return context.WithValue(ctx, traceKey{}, xtrace.ParseOrGenTraceID(ctx))
 }

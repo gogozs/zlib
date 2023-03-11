@@ -17,6 +17,11 @@ func TestLogger(t *testing.T) {
 }
 
 func TestWrapTraceID(t *testing.T) {
-	ctx := WrapTraceID(context.Background(), "testID")
+	ctx := WrapTraceWithTraceID(context.Background(), "testID")
+	InfoContext(ctx, "test: %s", "content")
+}
+
+func TestWrapTrace(t *testing.T) {
+	ctx := WrapTrace(context.Background())
 	InfoContext(ctx, "test: %s", "content")
 }

@@ -22,10 +22,6 @@ func NewLogger(logger *zap.SugaredLogger) ILogger {
 	}
 }
 
-func WrapTraceID(ctx context.Context, traceID string) context.Context {
-	return context.WithValue(ctx, traceKey{}, traceID)
-}
-
 func (l Logger) Debug(ctx context.Context, msg string, args ...interface{}) {
 	l.parse(ctx).Debugf(msg, args...)
 }
@@ -60,7 +56,7 @@ func (l Logger) Sync() {
 
 func (l Logger) parse(ctx context.Context) *zap.SugaredLogger {
 	logger := l.logger
-	if v := ctx.Value(traceKey{}); v != nil {
+	if exist, v := TraceID(ctx); exist {
 		logger = logger.With(traceLogItem, v)
 	}
 	return logger
