@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestDebug(t *testing.T) {
+func TestLogger(t *testing.T) {
 	Debug("test: %s", "content")
 	Info("test: %s", "content")
 	Warn("test: %s", "content")
@@ -14,4 +14,9 @@ func TestDebug(t *testing.T) {
 	InfoContext(context.Background(), "test: %s", "content")
 	WarnContext(context.Background(), "test: %s", "content")
 	ErrorContext(context.Background(), "test: %s", "content")
+}
+
+func TestWrapTraceID(t *testing.T) {
+	ctx := WrapTraceID(context.Background(), "testID")
+	InfoContext(ctx, "test: %s", "content")
 }

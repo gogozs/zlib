@@ -15,7 +15,7 @@ type (
 )
 
 const (
-	SystemError = -1
+	InternalError = -1
 )
 
 func NewXError(code int, msg string) *XError {
@@ -24,9 +24,26 @@ func NewXError(code int, msg string) *XError {
 
 func Errorf(msg string, args ...interface{}) error {
 	return &XError{
-		code: SystemError,
+		code: InternalError,
 		msg:  fmt.Sprintf(msg, args...),
 	}
+}
+
+func Wrap(err error, msg string) *XError {
+	if err == nil {
+		return nil
+	}
+	if xe, ok := err.(*XError); ok {
+		return NewXError(xe.code, WrapMessage(err, msg))
+	}
+	return NewXError(InternalError, WrapMessage(err, msg))
+}
+
+func WrapMessage(err error, msg string) string {
+	if err != nil {
+		return fmt.Sprintf("%s: %s", err, err.Error())
+	}
+	return msg
 }
 
 func (e XError) Error() string {

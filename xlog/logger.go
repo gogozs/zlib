@@ -15,6 +15,8 @@ type (
 		Warn(ctx context.Context, msg string, args ...interface{})
 		Error(ctx context.Context, msg string, args ...interface{})
 		Fatal(ctx context.Context, msg string, args ...interface{})
+		With(...interface{}) ILogger
+		MsgItem(string, interface{}) ILogger
 		// Sync flushes any buffered log entries.
 		Sync()
 	}
