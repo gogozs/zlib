@@ -14,6 +14,14 @@ func ToJsonString(v any) string {
 	return s
 }
 
+func ToJsonStringWithMaxLen(v any, max int) string {
+	arr, _ := Marshal(v)
+	if len(arr) > max {
+		arr = arr[:max]
+	}
+	return string(arr)
+}
+
 func Marshal(v any) ([]byte, error) {
 	return json.Marshal(v)
 }
