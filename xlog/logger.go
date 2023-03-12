@@ -99,6 +99,10 @@ func FatalContext(ctx context.Context, msg string, args ...interface{}) {
 	globalLogger.Fatal(ctx, msg, args...)
 }
 
+func MsgItem(msg string, value interface{}) ILogger {
+	return globalLogger.MsgItem(msg, value)
+}
+
 func WrapTraceWithTraceID(ctx context.Context, traceID string) context.Context {
 	return context.WithValue(ctx, traceKey{}, traceID)
 }
