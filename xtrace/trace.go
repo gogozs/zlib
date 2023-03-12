@@ -3,8 +3,11 @@ package xtrace
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
 	sdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -39,4 +42,26 @@ func ParseOrGenTraceID(ctx context.Context) string {
 
 func TraceID(span trace.Span) string {
 	return span.SpanContext().TraceID().String()
+}
+
+func Inject(ctx context.Context, p propagation.TextMapPropagator, carrier propagation.TextMapCarrier) {
+	p.Inject(ctx, carrier)
+}
+
+func Extract(ctx context.Context, p propagation.TextMapPropagator, carrier propagation.TextMapCarrier) context.Context {
+	return p.Extract(ctx, carrier)
+}
+
+func End(span trace.Span, err error) {
+	defer span.End()
+	if err != nil {
+		s, ok := status.FromError(err)
+		if ok {
+			span.SetStatus(codes.Error, s.Message())
+		} else {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		return
+	}
+	span.SetStatus(codes.Ok, "success")
 }
