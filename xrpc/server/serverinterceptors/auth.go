@@ -17,7 +17,11 @@ type (
 	}
 
 	AuthValidator interface {
-		Verify(token string) (uint64, error)
+		Verify(ctx context.Context, token string) (UserInfo, error)
+	}
+
+	UserInfo interface {
+		UserID() uint64
 	}
 )
 
@@ -27,7 +31,7 @@ func NewAuthInterceptor(authValidator AuthValidator) *AuthInterceptor {
 	}
 }
 
-func (a *AuthInterceptor) Unary(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) grpc.UnaryServerInterceptor {
+func (a *AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if err = a.auth(ctx, info.FullMethod); err != nil {
 			return nil, err
@@ -37,14 +41,13 @@ func (a *AuthInterceptor) Unary(ctx context.Context, req interface{}, _ *grpc.Un
 	}
 }
 
-func (a *AuthInterceptor) Stream(svr any, stream grpc.ServerStream, _ *grpc.StreamServerInfo,
-	handler grpc.StreamHandler) grpc.StreamServerInterceptor {
+func (a *AuthInterceptor) Stream() grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if err := a.auth(ss.Context(), info.FullMethod); err != nil {
 			return err
 		}
 
-		return handler(ss, stream)
+		return handler(srv, ss)
 	}
 }
 
@@ -54,25 +57,21 @@ func (a *AuthInterceptor) auth(ctx context.Context, method string) error {
 		return status.Errorf(codes.Unauthenticated, "metadata is not provided")
 	}
 
-	values, ok := md["Authorization"]
+	values, ok := md["authorization"]
 	if !ok || len(values) == 0 {
 		return status.Errorf(codes.Unauthenticated, "token is not provided")
 	}
 
 	token := values[0]
-	userID, err := a.authValidator.Verify(token)
+	user, err := a.authValidator.Verify(ctx, token)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, "token is not provided")
 	}
-	auth.WithAuth(ctx, userID)
+	auth.WithAuth(ctx, user)
 	return nil
 }
 
-func ParseUserID(ctx context.Context) uint64 {
+func ParseUserDetails(ctx context.Context) UserInfo {
 	value := auth.ParseAuth(ctx)
-	userID, ok := value.(uint64)
-	if ok {
-		return 0
-	}
-	return userID
+	return value.(UserInfo)
 }
