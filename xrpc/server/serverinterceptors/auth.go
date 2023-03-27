@@ -65,7 +65,7 @@ func (a *AuthInterceptor) auth(ctx context.Context, method string) error {
 	token := values[0]
 	user, err := a.authValidator.Verify(ctx, token)
 	if err != nil {
-		return status.Errorf(codes.Unauthenticated, "token is not provided")
+		return status.Errorf(codes.Unauthenticated, "token is invalid")
 	}
 	auth.WithAuth(ctx, user)
 	return nil
