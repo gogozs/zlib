@@ -77,7 +77,7 @@ func (s *RpcServer) startServer() error {
 }
 
 func (s *RpcServer) startHttpServer() error {
-	mux := runtime.NewServeMux()
+	mux := NewMuxServer()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := s.options.httpRegisterFn(context.Background(), mux, s.options.addr, opts); err != nil {
 		return err

@@ -2,12 +2,11 @@ package serverinterceptors
 
 import (
 	"context"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/gogozs/zlib/tools"
 	"github.com/gogozs/zlib/xerr"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // UnaryErrorInterceptor ...
@@ -32,8 +31,5 @@ func transError(err error) error {
 	if !ok {
 		return err
 	}
-	if xe.Code() == xerr.InternalError {
-		return status.New(codes.Internal, xe.Error()).Err()
-	}
-	return status.New(codes.FailedPrecondition, xe.Error()).Err()
+	return status.Error(codes.Code(xe.Code()), xe.Error())
 }
