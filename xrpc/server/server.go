@@ -112,12 +112,14 @@ func WithHttpServer(httpAddr string, fn RegisterHttpFn) Option {
 
 func buildDefaultUnaryInterceptors() []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
+		serverinterceptors.UnaryErrorInterceptor,
 		serverinterceptors.UnaryRecoverInterceptor,
 	}
 }
 
 func buildDefaultStreamInterceptors() []grpc.StreamServerInterceptor {
 	return []grpc.StreamServerInterceptor{
+		serverinterceptors.StreamErrorInterceptor,
 		serverinterceptors.StreamRecoverInterceptor,
 	}
 }

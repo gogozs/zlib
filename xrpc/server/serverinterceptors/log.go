@@ -18,7 +18,9 @@ func LogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServer
 		reqStr := tools.ToJsonStringWithMaxLen(req, 1024)
 		rspStr := tools.ToJsonStringWithMaxLen(resp, 1024)
 		if err != nil {
-			xlog.MsgItem("error", err).
+			errStack := fmt.Sprintf("%+v", err)
+			xlog.DebugContext(ctx, errStack)
+			xlog.MsgItem("error", errStack).
 				MsgItem("cost", cost).
 				MsgItem("req", reqStr).
 				MsgItem("rsp", rspStr).
