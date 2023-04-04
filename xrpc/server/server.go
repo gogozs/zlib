@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/gogozs/zlib/xlog"
 	"net"
 	"net/http"
 
@@ -48,8 +49,10 @@ func NewRpcServer(addr string, registerFn RegisterFn, opts ...Option) *RpcServer
 }
 
 func (s *RpcServer) Start() error {
+	xlog.Info("Start server at: %s...", s.options.addr)
 	var errChan chan error
 	if s.options.httpAddr != "" {
+		xlog.Info("Start http server at: %s...", s.options.httpAddr)
 		tools.SafeGo(func() {
 			errChan <- s.startHttpServer()
 		})
