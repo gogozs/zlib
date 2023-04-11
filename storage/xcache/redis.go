@@ -7,7 +7,16 @@ import (
 )
 
 type (
-	RedisClient struct {
+	RedisClient interface {
+		Get(key string) (string, error)
+		Set(key, value string) (int, error)
+		SetNx(key, value string) (int, error)
+		SetExpired(key, value string, expired int) (int, error)
+		SetNxExpired(key, value string, expired int) (int, error)
+		Del(key string) (int, error)
+	}
+
+	DefaultRedisClient struct {
 		pool *redis.Pool
 	}
 
@@ -43,7 +52,7 @@ const (
 	defaultIdleTimeout     = 240 * time.Second
 )
 
-func NewRedisClient(options ...RedisOption) RedisClient {
+func NewRedisClient(options ...RedisOption) DefaultRedisClient {
 	conf := &RedisConfig{
 		host:            defaultHost,
 		port:            defaultPort,
@@ -55,7 +64,7 @@ func NewRedisClient(options ...RedisOption) RedisClient {
 	for _, o := range options {
 		o.apply(conf)
 	}
-	return RedisClient{pool: newPool(conf)}
+	return DefaultRedisClient{pool: newPool(conf)}
 }
 
 func newPool(conf *RedisConfig) *redis.Pool {
@@ -97,46 +106,46 @@ func SetMaxLifetime(l time.Duration) RedisOption { return maxLifetimeOption(l) }
 
 func SetIdleTimeout(t time.Duration) RedisOption { return idleTimeoutOption(t) }
 
-func (r RedisClient) Get(key string) (string, error) {
+func (r DefaultRedisClient) Get(key string) (string, error) {
 	return r.DoString("get")
 }
 
-func (r RedisClient) Set(key, value string) (int, error) {
+func (r DefaultRedisClient) Set(key, value string) (int, error) {
 	return r.DoInt("set", key, value)
 }
 
-func (r RedisClient) SetNx(key, value string) (int, error) {
+func (r DefaultRedisClient) SetNx(key, value string) (int, error) {
 	return r.DoInt("setnx", key, value)
 }
 
-func (r RedisClient) SetExpired(key, value string, expired int) (int, error) {
+func (r DefaultRedisClient) SetExpired(key, value string, expired int) (int, error) {
 	return r.DoInt("set", key, value, "ex", expired)
 }
 
-func (r RedisClient) SetNxExpired(key, value string, expired int) (int, error) {
+func (r DefaultRedisClient) SetNxExpired(key, value string, expired int) (int, error) {
 	return r.DoInt("setnx", key, value, "ex", expired)
 }
 
-func (r RedisClient) Del(key string) (int, error) {
+func (r DefaultRedisClient) Del(key string) (int, error) {
 	return r.DoInt("del", key)
 }
 
-func (r RedisClient) DoString(command string, args ...interface{}) (string, error) {
+func (r DefaultRedisClient) DoString(command string, args ...interface{}) (string, error) {
 	conn := r.getConn()
 	defer r.closeConn(conn)
 	return redis.String(conn.Do(command, args...))
 }
 
-func (r RedisClient) DoInt(command string, args ...interface{}) (int, error) {
+func (r DefaultRedisClient) DoInt(command string, args ...interface{}) (int, error) {
 	conn := r.getConn()
 	defer r.closeConn(conn)
 	return redis.Int(conn.Do(command, args...))
 }
 
-func (r RedisClient) getConn() redis.Conn {
+func (r DefaultRedisClient) getConn() redis.Conn {
 	return r.pool.Get()
 }
 
-func (r RedisClient) closeConn(conn redis.Conn) {
+func (r DefaultRedisClient) closeConn(conn redis.Conn) {
 	_ = conn.Close()
 }
