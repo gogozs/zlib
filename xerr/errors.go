@@ -2,10 +2,11 @@ package xerr
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"io"
 )
 
 type (
@@ -66,14 +67,14 @@ func (e *XError) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			io.WriteString(s, e.msg)
+			_, _ = io.WriteString(s, e.msg)
 			return
 		}
 		fallthrough
 	case 's':
-		io.WriteString(s, e.msg)
+		_, _ = io.WriteString(s, e.msg)
 	case 'q':
-		fmt.Fprintf(s, "%q", e.msg)
+		_, _ = fmt.Fprintf(s, "%q", e.msg)
 	}
 }
 

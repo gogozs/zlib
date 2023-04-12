@@ -2,8 +2,9 @@ package cache
 
 import (
 	"fmt"
-	"github.com/gomodule/redigo/redis"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 type (
@@ -16,7 +17,7 @@ type (
 		Del(key string) (int, error)
 		Incr(key string, value int) (int, error)
 		Eval(script string, keys []string, argv []string) (interface{}, error)
-		EvalSha(sha string, keys []string, argv []string) (interface{}, error)
+		EvalSha(sha string, script string, keys []string, argv []string) (interface{}, error)
 	}
 
 	DefaultRedisClient struct {
@@ -56,6 +57,8 @@ const (
 	defaultMaxConnLifetime = 3600 * time.Second
 	defaultIdleTimeout     = 240 * time.Second
 )
+
+const noMatchingScriptErr = "NOSCRIPT No matching script. Please use EVAL."
 
 func NewRedisClient(options ...RedisOption) RedisClient {
 	conf := &RedisConfig{
@@ -149,12 +152,19 @@ func (r DefaultRedisClient) Eval(script string, keys []string, argv []string) (i
 	return conn.Do("EVAL", args...)
 }
 
-func (r DefaultRedisClient) EvalSha(sha string, keys []string, argv []string) (interface{}, error) {
+func (r DefaultRedisClient) EvalSha(sha string, script string, keys []string, argv []string) (interface{}, error) {
 	conn := r.getConn()
 	defer r.closeConn(conn)
 
 	args := r.buildArgs(sha, keys, argv)
-	return conn.Do("EVALSHA", args...)
+	res, err := conn.Do("EVALSHA", args...)
+	if err != nil && err.Error() == noMatchingScriptErr {
+		return r.Eval(script, keys, argv)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (r DefaultRedisClient) buildArgs(target string, keys []string, argv []string) []interface{} {

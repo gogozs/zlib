@@ -1,11 +1,12 @@
 package cache
 
 import (
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -32,14 +33,23 @@ func TestDefaultRedisClient_Eval(t *testing.T) {
 }
 
 func TestDefaultRedisClient_EvalSha(t *testing.T) {
-	_, err1 := testClient.Eval("return ARGV[1]", nil, []string{"hello"})
-	require.Nil(t, err1)
+	t.Run("once", func(t *testing.T) {
+		r, err2 := testClient.EvalSha("098e0f0d1448c0a81dafe820f66d460eb09263da", "return ARGV[1]", nil, []string{"hello"})
+		require.Nil(t, err2)
+		s, ok := r.([]byte)
+		require.True(t, ok)
+		require.Equal(t, "hello", string(s))
+	})
+	t.Run("twice", func(t *testing.T) {
+		_, err1 := testClient.Eval("return KEYS[1]", []string{"hello"}, nil)
+		require.Nil(t, err1)
 
-	r, err2 := testClient.EvalSha("098e0f0d1448c0a81dafe820f66d460eb09263da", nil, []string{"hello"})
-	require.Nil(t, err2)
-	s, ok := r.([]byte)
-	require.True(t, ok)
-	require.Equal(t, "hello", string(s))
+		r, err2 := testClient.EvalSha("4a2267357833227dd98abdedb8cf24b15a986445", "return KEYS[1]", []string{"hello"}, nil)
+		require.Nil(t, err2)
+		s, ok := r.([]byte)
+		require.True(t, ok)
+		require.Equal(t, "hello", string(s))
+	})
 }
 
 func TestDefaultRedisClient_Get(t *testing.T) {
