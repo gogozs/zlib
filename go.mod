@@ -3,6 +3,7 @@ module github.com/gogozs/zlib
 go 1.18
 
 require (
+	github.com/brianvoe/gofakeit/v6 v6.20.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/go-resty/resty/v2 v2.7.0
@@ -22,7 +23,6 @@ require (
 )
 
 require (
-	github.com/brianvoe/gofakeit/v6 v6.20.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
