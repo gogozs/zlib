@@ -9,11 +9,14 @@ import (
 type (
 	RedisClient interface {
 		Get(key string) (string, error)
-		Set(key, value string) (int, error)
+		Set(key, value string) (string, error)
 		SetNx(key, value string) (int, error)
-		SetExpired(key, value string, expired int) (int, error)
-		SetNxExpired(key, value string, expired int) (int, error)
+		SetExpired(key, value string, expired int) (string, error)
+		SetNxExpired(key, value string, expired int) (string, error)
 		Del(key string) (int, error)
+		Incr(key string, value int) (int, error)
+		Eval(script string, keys []string, argv []string) (interface{}, error)
+		EvalSha(sha string, keys []string, argv []string) (interface{}, error)
 	}
 
 	DefaultRedisClient struct {
@@ -43,6 +46,8 @@ type (
 	idleTimeoutOption time.Duration
 )
 
+var _ RedisClient = (*DefaultRedisClient)(nil)
+
 const (
 	defaultHost            = "127.0.0.1"
 	defaultPort            = 6379
@@ -52,7 +57,7 @@ const (
 	defaultIdleTimeout     = 240 * time.Second
 )
 
-func NewRedisClient(options ...RedisOption) DefaultRedisClient {
+func NewRedisClient(options ...RedisOption) RedisClient {
 	conf := &RedisConfig{
 		host:            defaultHost,
 		port:            defaultPort,
@@ -107,36 +112,70 @@ func SetMaxLifetime(l time.Duration) RedisOption { return maxLifetimeOption(l) }
 func SetIdleTimeout(t time.Duration) RedisOption { return idleTimeoutOption(t) }
 
 func (r DefaultRedisClient) Get(key string) (string, error) {
-	return r.DoString("get")
+	return r.doString("get", key)
 }
 
-func (r DefaultRedisClient) Set(key, value string) (int, error) {
-	return r.DoInt("set", key, value)
+func (r DefaultRedisClient) Set(key, value string) (string, error) {
+	return r.doString("set", key, value)
 }
 
 func (r DefaultRedisClient) SetNx(key, value string) (int, error) {
-	return r.DoInt("setnx", key, value)
+	return r.doInt("setnx", key, value)
 }
 
-func (r DefaultRedisClient) SetExpired(key, value string, expired int) (int, error) {
-	return r.DoInt("set", key, value, "ex", expired)
+func (r DefaultRedisClient) SetExpired(key, value string, expired int) (string, error) {
+	return r.doString("set", key, value, "ex", expired)
 }
 
-func (r DefaultRedisClient) SetNxExpired(key, value string, expired int) (int, error) {
-	return r.DoInt("setnx", key, value, "ex", expired)
+func (r DefaultRedisClient) SetNxExpired(key, value string, expired int) (string, error) {
+	return r.doString("set", key, value, "ex", expired, "nx")
 }
 
 func (r DefaultRedisClient) Del(key string) (int, error) {
-	return r.DoInt("del", key)
+	return r.doInt("del", key)
 }
 
-func (r DefaultRedisClient) DoString(command string, args ...interface{}) (string, error) {
+func (r DefaultRedisClient) Incr(key string, value int) (int, error) {
+	conn := r.getConn()
+	defer r.closeConn(conn)
+	return redis.Int(conn.Do("INCRBY", key, value))
+}
+
+func (r DefaultRedisClient) Eval(script string, keys []string, argv []string) (interface{}, error) {
+	conn := r.getConn()
+	defer r.closeConn(conn)
+
+	args := r.buildArgs(script, keys, argv)
+	return conn.Do("EVAL", args...)
+}
+
+func (r DefaultRedisClient) EvalSha(sha string, keys []string, argv []string) (interface{}, error) {
+	conn := r.getConn()
+	defer r.closeConn(conn)
+
+	args := r.buildArgs(sha, keys, argv)
+	return conn.Do("EVALSHA", args...)
+}
+
+func (r DefaultRedisClient) buildArgs(target string, keys []string, argv []string) []interface{} {
+	args := make([]any, 0, len(keys)+len(argv)+2)
+	args = append(args, target, len(keys))
+	for _, key := range keys {
+		args = append(args, key)
+	}
+	for _, arg := range argv {
+		args = append(args, arg)
+	}
+	return args
+}
+
+func (r DefaultRedisClient) doString(command string, args ...interface{}) (string, error) {
 	conn := r.getConn()
 	defer r.closeConn(conn)
 	return redis.String(conn.Do(command, args...))
 }
 
-func (r DefaultRedisClient) DoInt(command string, args ...interface{}) (int, error) {
+func (r DefaultRedisClient) doInt(command string, args ...interface{}) (int, error) {
 	conn := r.getConn()
 	defer r.closeConn(conn)
 	return redis.Int(conn.Do(command, args...))
