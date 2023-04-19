@@ -1,0 +1,22 @@
+{{define "server/model/[model].go.tpl"}}
+package dao
+
+import "database/sql"
+
+type (
+	{{.Model}}PO struct {
+        {{range $i,$v := .Columns}}
+            {{ $v.UpperCamelCase }} {{ $v.Type }} `db:"{{ $v.ColumnName }}"`
+        {{end}}
+	}
+)
+
+const (
+	{{range $i,$v := .Columns}}
+        {{ $v.UpperCamelCase }}Column = "{{ $v.ColumnName }}"
+    {{end}}
+)
+
+func (po {{.Model}}PO) TableName() string {
+	return "{{.TableName}}"
+}
