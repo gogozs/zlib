@@ -1,22 +1,23 @@
-{{define "server/model/[model].go.tpl"}}
-package dao
+{{define "dao/[model].go"}}package dao
 
 import "database/sql"
 
 type (
-	{{.Model}}PO struct {
+	{{ .ModalName.UpperCamelCase }}PO struct {
         {{range $i,$v := .Columns}}
-            {{ $v.UpperCamelCase }} {{ $v.Type }} `db:"{{ $v.ColumnName }}"`
+            {{ $v.ColumnName.UpperCamelCase }} {{ $v.Type }} `db:"{{ $v.ColumnName.String }}"`
         {{end}}
 	}
 )
 
 const (
 	{{range $i,$v := .Columns}}
-        {{ $v.UpperCamelCase }}Column = "{{ $v.ColumnName }}"
+        {{ $v.ColumnName.UpperCamelCase }}Column = "{{ $v.ColumnName.String }}"
     {{end}}
 )
 
-func (po {{.Model}}PO) TableName() string {
+func (po {{.ModalName.UpperCamelCase}}PO) TableName() string {
 	return "{{.TableName}}"
 }
+
+{{end}}

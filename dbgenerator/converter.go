@@ -70,7 +70,15 @@ func (c *DBConverter) Convert() error {
 }
 
 func (c *DBConverter) convert(table string) error {
-	tableData, err := c.parser.GetTableData(table, nil)
+	dbColumns, err := c.parser.GetTableSchema(table)
+	if err != nil {
+		return err
+	}
+	columns, err := c.parser.GetColumns(dbColumns, GetGoTypeMap())
+	if err != nil {
+		return err
+	}
+	tableData, err := c.parser.BuildTableData(table, columns, c.config.ConvertConfig.TablePrefix)
 	if err != nil {
 		return err
 	}
@@ -80,8 +88,8 @@ func (c *DBConverter) convert(table string) error {
 	}
 	for _, tmpl := range templates.Templates() {
 		tmplName := tmpl.Name()
-		dstFile := strings.ReplaceAll(tmplName, "[model]", strings.ToLower(tableData.TableName))
-		dstFile = strings.ReplaceAll(dstFile, "[Model]", tableData.TableName)
+		dstFile := strings.ReplaceAll(tmplName, "[model]", tableData.ModalName.LowerCamelCase())
+		dstFile = strings.ReplaceAll(dstFile, "[Model]", tableData.ModalName.UpperCamelCase())
 		pkgpath := strings.ReplaceAll(c.config.ConvertConfig.ModelPackagePath, ".", "/")
 		dstFile = strings.ReplaceAll(dstFile, "[pkgpath]", pkgpath)
 		f, err := os.OpenFile(dstFile, os.O_WRONLY|os.O_CREATE, 0766)

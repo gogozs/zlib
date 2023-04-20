@@ -42,7 +42,7 @@ func TestDBParser_GetTables(t *testing.T) {
 
 func TestDBParser_GetTableSchema(t *testing.T) {
 	parser := initTestParser()
-	columns, err := parser.GetTableSchema("t_user", new(TypeMap))
+	columns, err := parser.GetTableSchema("t_user")
 	require.Nil(t, err)
 	fmt.Println(columns)
 }

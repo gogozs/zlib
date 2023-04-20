@@ -4,12 +4,43 @@ type Mapping interface {
 	GetType(tp SQLType) string
 }
 
+var (
+	goTypeMap Mapping
+)
+
+func init() {
+	goTypeMap = TypeMap{
+		TinyInt:   "int",
+		SmallInt:  "int",
+		MediumInt: "int",
+		Int:       "int",
+		Integer:   "int",
+		BigInt:    "uint64",
+		Float:     "float64",
+		Double:    "float64",
+		Decimal:   "float64",
+		Datetime:  "time.Time",
+		Date:      "time.Time",
+		TimeStamp: "uint64",
+		Char:      "string",
+		Varchar:   "string",
+		Bit:       "bool",
+		Numeric:   "float64",
+		Text:      "string",
+		LongText:  "string",
+	}
+}
+
+func GetGoTypeMap() Mapping {
+	return goTypeMap
+}
+
 type SQLType string
 
-type TypeMap map[string]string
+type TypeMap map[SQLType]string
 
 func (m TypeMap) GetType(tp SQLType) string {
-	v, ok := m[string(tp)]
+	v, ok := m[tp]
 	if !ok {
 		return "UNKNOWN"
 	}
@@ -23,7 +54,7 @@ const (
 	Int       SQLType = "int"
 	Integer   SQLType = "integer"
 	BigInt    SQLType = "bigint"
-	float     SQLType = "float"
+	Float     SQLType = "float"
 	Double    SQLType = "double"
 	Decimal   SQLType = "decimal"
 	Datetime  SQLType = "datetime"

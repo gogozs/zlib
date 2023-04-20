@@ -3,8 +3,6 @@ package dbgenerator
 import (
 	"context"
 
-	"github.com/gogozs/zlib/tools"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gogozs/zlib/storage/xsql"
 )
@@ -17,16 +15,13 @@ type (
 
 	TableData struct {
 		TableName string
+		ModalName KeyString
 		Columns   []Column
 	}
 
 	Column struct {
-		ColumnName     string
-		UpperCamelCase string
-		LowerCamelCase string
-		LowerSnake     string
-		UpperSnake     string
-		Type           string
+		ColumnName KeyString
+		Type       string
 	}
 
 	DBColumn struct {
@@ -82,7 +77,7 @@ func (p DBParser) GetTables() (tables []string, err error) {
 	return
 }
 
-func (p DBParser) GetTableSchema(tableName string, m Mapping) (dbColumns []DBColumn, err error) {
+func (p DBParser) GetTableSchema(tableName string) (dbColumns []DBColumn, err error) {
 	if err = p.db.SelectContext(context.Background(), &dbColumns, schemaSQL, p.dbname, tableName); err != nil {
 		return nil, err
 	}
@@ -93,21 +88,18 @@ func (p DBParser) GetColumns(dbColumns []DBColumn, m Mapping) (columns []Column,
 	columns = make([]Column, 0, len(dbColumns))
 	for _, col := range dbColumns {
 		columns = append(columns, Column{
-			ColumnName:     col.ColumnName,
-			UpperCamelCase: tools.ToUpperCamelCase(col.ColumnName),
-			LowerCamelCase: tools.ToLowerCamelCase(col.ColumnName),
-			UpperSnake:     tools.ToUpperCamelCase(col.ColumnName),
-			LowerSnake:     tools.ToLowerCamelCase(col.ColumnName),
-			Type:           m.GetType(SQLType(col.ColumnType)),
+			ColumnName: KeyString(col.ColumnName),
+			Type:       m.GetType(SQLType(col.ColumnType)),
 		})
 	}
 
 	return columns, nil
 }
 
-func (p DBParser) GetTableData(tableName string, columns []Column) (*TableData, error) {
+func (p DBParser) BuildTableData(tableName string, columns []Column, prefix string) (*TableData, error) {
 	return &TableData{
 		TableName: tableName,
+		ModalName: KeyString(tableName[len(prefix):]),
 		Columns:   columns,
 	}, nil
 }
