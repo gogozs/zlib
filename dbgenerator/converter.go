@@ -2,8 +2,8 @@ package dbgenerator
 
 import (
 	"os"
+	"path"
 	"strings"
-	"text/template"
 
 	"github.com/gogozs/zlib/storage/xsql"
 )
@@ -27,14 +27,11 @@ type DBConfig struct {
 }
 
 type ConvertConfig struct {
-	TemplateDir        string
-	TablePrefix        string
-	IncludeTables      []string
-	ExcludeTables      []string
-	ModelPackagePath   string
-	DaoPackagePath     string
-	ServicePackagePath string
-	ServerPackagePath  string
+	TemplateDir   string
+	TablePrefix   string
+	IncludeTables []string
+	ExcludeTables []string
+	PackagePath   string
 }
 
 func NewDBConverter(config *ConverterConfig) (*DBConverter, error) {
@@ -60,8 +57,10 @@ func (c *DBConverter) Convert() error {
 	if err != nil {
 		return err
 	}
+
+	g := NewGoGenerator(c.config.ConvertConfig.TemplateDir)
 	for _, table := range tables {
-		if err = c.convert(table); err != nil {
+		if err = c.convert(table, g); err != nil {
 			return err
 		}
 	}
@@ -69,12 +68,12 @@ func (c *DBConverter) Convert() error {
 	return nil
 }
 
-func (c *DBConverter) convert(table string) error {
+func (c *DBConverter) convert(table string, g Generator) error {
 	dbColumns, err := c.parser.GetTableSchema(table)
 	if err != nil {
 		return err
 	}
-	columns, err := c.parser.GetColumns(dbColumns, GetGoTypeMap())
+	columns, err := c.parser.GetColumns(dbColumns, g.GetMapping())
 	if err != nil {
 		return err
 	}
@@ -82,16 +81,15 @@ func (c *DBConverter) convert(table string) error {
 	if err != nil {
 		return err
 	}
-	templates := template.New("root")
-	if templates, err = templates.ParseGlob(c.config.ConvertConfig.TemplateDir + "/*"); err != nil {
+	templates, err := g.GetTemplates()
+	if err != nil {
 		return err
 	}
 	for _, tmpl := range templates.Templates() {
 		tmplName := tmpl.Name()
 		dstFile := strings.ReplaceAll(tmplName, "[model]", tableData.ModalName.LowerCamelCase())
 		dstFile = strings.ReplaceAll(dstFile, "[Model]", tableData.ModalName.UpperCamelCase())
-		pkgpath := strings.ReplaceAll(c.config.ConvertConfig.ModelPackagePath, ".", "/")
-		dstFile = strings.ReplaceAll(dstFile, "[pkgpath]", pkgpath)
+		dstFile = path.Join(c.config.ConvertConfig.PackagePath, dstFile)
 		f, err := os.OpenFile(dstFile, os.O_WRONLY|os.O_CREATE, 0766)
 		if err != nil {
 			return err

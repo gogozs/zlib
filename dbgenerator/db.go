@@ -89,7 +89,7 @@ func (p DBParser) GetColumns(dbColumns []DBColumn, m Mapping) (columns []Column,
 	for _, col := range dbColumns {
 		columns = append(columns, Column{
 			ColumnName: KeyString(col.ColumnName),
-			Type:       m.GetType(SQLType(col.ColumnType)),
+			Type:       m.GetType(SQLType(col.DataType)),
 		})
 	}
 
