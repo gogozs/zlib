@@ -85,12 +85,7 @@ func newPool(conf *RedisConfig) *redis.Pool {
 		MaxConnLifetime: conf.maxConnLifetime,
 		IdleTimeout:     conf.idleTimeout,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial(
-				"tcp",
-				fmt.Sprintf("%s:%d", conf.host, conf.port),
-				redis.DialUsername(conf.username),
-				redis.DialPassword(conf.password),
-			)
+			return redis.DialURL(fmt.Sprintf("redis://%s:%s@%s:%d", conf.username, conf.password, conf.host, conf.port))
 		},
 		Wait: true,
 	}
