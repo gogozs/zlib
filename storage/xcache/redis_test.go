@@ -108,3 +108,20 @@ func TestNewRedisClient(t *testing.T) {
 	)
 	require.NotNil(t, client)
 }
+
+func TestDefaultRedisClient_Exists(t *testing.T) {
+	t.Run("not exist", func(t *testing.T) {
+		randomKey := gofakeit.LetterN(10)
+		exists, err := testClient.Exists(randomKey)
+		require.Nil(t, err)
+		require.False(t, exists)
+	})
+	t.Run("exist", func(t *testing.T) {
+		randomKey := gofakeit.LetterN(10)
+		_, err := testClient.SetExpired(randomKey, "", 1)
+		require.Nil(t, err)
+		exists, err := testClient.Exists(randomKey)
+		require.Nil(t, err)
+		require.True(t, exists)
+	})
+}

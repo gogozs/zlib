@@ -18,6 +18,7 @@ type (
 		Incr(key string, value int) (int, error)
 		Eval(script string, keys []string, argv []string) (interface{}, error)
 		EvalSha(sha string, script string, keys []string, argv []string) (interface{}, error)
+		Exists(key string) (bool, error)
 	}
 
 	DefaultRedisClient struct {
@@ -27,7 +28,8 @@ type (
 	RedisConfig struct {
 		host            string
 		port            int
-		Password        string
+		username        string
+		password        string
 		maxIdle         int
 		maxActive       int
 		maxConnLifetime time.Duration
@@ -40,6 +42,7 @@ type (
 
 	hostOption        string
 	portOption        int
+	usernameOption    string
 	passwordOption    string
 	maxIdleOption     int
 	maxActiveOption   int
@@ -81,8 +84,15 @@ func newPool(conf *RedisConfig) *redis.Pool {
 		MaxActive:       conf.maxActive,
 		MaxConnLifetime: conf.maxConnLifetime,
 		IdleTimeout:     conf.idleTimeout,
-		Dial:            func() (redis.Conn, error) { return redis.Dial("tcp", fmt.Sprintf("%s:%d", conf.host, conf.port)) },
-		Wait:            true,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial(
+				"tcp",
+				fmt.Sprintf("%s:%d", conf.host, conf.port),
+				redis.DialUsername(conf.username),
+				redis.DialPassword(conf.password),
+			)
+		},
+		Wait: true,
 	}
 }
 
@@ -90,7 +100,9 @@ func (h hostOption) apply(o *RedisConfig) { o.host = string(h) }
 
 func (p portOption) apply(o *RedisConfig) { o.port = int(p) }
 
-func (p passwordOption) apply(o *RedisConfig) { o.Password = string(p) }
+func (u usernameOption) apply(o *RedisConfig) { o.username = string(u) }
+
+func (p passwordOption) apply(o *RedisConfig) { o.password = string(p) }
 
 func (p maxIdleOption) apply(o *RedisConfig) { o.maxIdle = int(p) }
 
@@ -103,6 +115,8 @@ func (p idleTimeoutOption) apply(o *RedisConfig) { o.idleTimeout = time.Duration
 func SetHost(h string) RedisOption { return hostOption(h) }
 
 func SetPort(port int) RedisOption { return portOption(port) }
+
+func SetUsername(usr string) RedisOption { return usernameOption(usr) }
 
 func SetPassword(pwd string) RedisOption { return passwordOption(pwd) }
 
@@ -165,6 +179,14 @@ func (r DefaultRedisClient) EvalSha(sha string, script string, keys []string, ar
 		return nil, err
 	}
 	return res, nil
+}
+
+func (r DefaultRedisClient) Exists(key string) (bool, error) {
+	rsp, err := r.doInt("exists", key)
+	if err != nil {
+		return false, err
+	}
+	return rsp == 1, nil
 }
 
 func (r DefaultRedisClient) buildArgs(target string, keys []string, argv []string) []interface{} {
