@@ -57,7 +57,7 @@ func WithIdleTimeout(idleTimeout time.Duration) OptionFunc {
 
 func NewDB(sqlConfig *SQLConfig, opts ...OptionFunc) (DB, error) {
 	xlog.Info("config: %s", sqlConfig)
-	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s",
+	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?parseTime=true",
 		sqlConfig.Username, sqlConfig.Password, sqlConfig.Host, sqlConfig.Port, sqlConfig.Dbname)
 	db, err := sqlx.Connect("mysql", dsn)
 	if err != nil {
