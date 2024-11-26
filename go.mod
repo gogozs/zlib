@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-oauth2/oauth2/v4 v4.5.2
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gomodule/redigo v1.8.9
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
