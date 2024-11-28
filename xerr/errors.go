@@ -5,14 +5,12 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type (
 	XError struct {
 		code int
-		msg  string
 		err  error
 	}
 )
@@ -25,11 +23,11 @@ func NewXErrorByError(code int, err error) *XError {
 	if err == nil {
 		return nil
 	}
-	return &XError{code: code, err: err, msg: err.Error()}
+	return &XError{code: code, err: err}
 }
 
 func NewXError(code int, msg string) *XError {
-	return &XError{code: code, err: errors.New(msg), msg: msg}
+	return &XError{code: code, err: errors.New(msg)}
 }
 
 func Errorf(msg string, args ...interface{}) error {
@@ -55,7 +53,7 @@ func (e *XError) Wrap(msg string) {
 }
 
 func (e *XError) Error() string {
-	return e.msg
+	return e.err.Error()
 }
 
 func (e *XError) Format(s fmt.State, verb rune) {
@@ -67,14 +65,14 @@ func (e *XError) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			_, _ = io.WriteString(s, e.msg)
+			_, _ = io.WriteString(s, e.Error())
 			return
 		}
 		fallthrough
 	case 's':
-		_, _ = io.WriteString(s, e.msg)
+		_, _ = io.WriteString(s, e.Error())
 	case 'q':
-		_, _ = fmt.Fprintf(s, "%q", e.msg)
+		_, _ = fmt.Fprintf(s, "%q", e.Error())
 	}
 }
 
@@ -84,11 +82,5 @@ func (e *XError) Code() int {
 
 // ToGrpcError ...
 func ToGrpcError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if e, ok := err.(*XError); ok {
-		return status.Error(codes.Code(e.Code()), e.Error())
-	}
-	return status.Error(codes.Internal, err.Error())
+	return status.Convert(err).Err()
 }

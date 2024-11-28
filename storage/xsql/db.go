@@ -7,14 +7,24 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type DB interface {
-	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-}
+type (
+	DB interface {
+		GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+		SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+		ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	}
+	TransactionDB interface {
+		DB
+		DoTx(ctx context.Context, transactions ...func(ctx context.Context, db DB) error) error
+	}
+	txDB struct {
+		*sqlx.DB
+	}
+)
 
-func DoTx(ctx context.Context, db *sqlx.DB, transactions ...func(db DB) error) (err error) {
-	tx, err := db.Beginx()
+func (db txDB) DoTx(ctx context.Context, transactions ...func(ctx context.Context, db DB) error) (err error) {
+	var tx *sqlx.Tx
+	tx, err = db.Beginx()
 	defer func() {
 		if r := recover(); r != nil {
 			_ = tx.Rollback()
@@ -31,9 +41,9 @@ func DoTx(ctx context.Context, db *sqlx.DB, transactions ...func(db DB) error) (
 		return err
 	}
 	for _, f := range transactions {
-		if err = f(tx); err != nil {
+		if err = f(ctx, tx); err != nil {
 			return err
 		}
 	}
-	return
+	return nil
 }

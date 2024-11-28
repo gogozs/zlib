@@ -55,7 +55,19 @@ func WithIdleTimeout(idleTimeout time.Duration) OptionFunc {
 	}
 }
 
+func NewTxDB(sqlConfig *SQLConfig, opts ...OptionFunc) (TransactionDB, error) {
+	db, err := newMysqlDB(sqlConfig, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return txDB{db}, nil
+}
+
 func NewDB(sqlConfig *SQLConfig, opts ...OptionFunc) (DB, error) {
+	return newMysqlDB(sqlConfig, opts...)
+}
+
+func newMysqlDB(sqlConfig *SQLConfig, opts ...OptionFunc) (*sqlx.DB, error) {
 	xlog.Info("config: %s", sqlConfig)
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?parseTime=true",
 		sqlConfig.Username, sqlConfig.Password, sqlConfig.Host, sqlConfig.Port, sqlConfig.Dbname)
@@ -77,12 +89,4 @@ func NewDB(sqlConfig *SQLConfig, opts ...OptionFunc) (DB, error) {
 	db.SetConnMaxLifetime(sqlOptions.MaxConnLifetime)
 	db.SetConnMaxIdleTime(sqlOptions.MaxIdleTime)
 	return db, nil
-}
-
-func NewLogDB(sqlConfig *SQLConfig, options ...OptionFunc) (DB, error) {
-	db, err := NewDB(sqlConfig, options...)
-	if err != nil {
-		return nil, err
-	}
-	return WrapLog(db), nil
 }

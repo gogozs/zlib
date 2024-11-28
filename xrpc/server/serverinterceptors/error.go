@@ -31,5 +31,5 @@ func transError(err error) error {
 	if !ok {
 		return err
 	}
-	return status.Error(codes.Code(xe.Code()), xe.Error())
+	return status.Error(codes.Unknown, xe.Error())
 }
