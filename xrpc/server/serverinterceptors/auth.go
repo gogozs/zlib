@@ -33,7 +33,8 @@ func NewAuthInterceptor(authValidator AuthValidator) *AuthInterceptor {
 
 func (a *AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		if err = a.auth(ctx, info.FullMethod); err != nil {
+		ctx, err = a.auth(ctx, info.FullMethod)
+		if err != nil {
 			return nil, err
 		}
 
@@ -43,32 +44,41 @@ func (a *AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 
 func (a *AuthInterceptor) Stream() grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if err := a.auth(ss.Context(), info.FullMethod); err != nil {
+		ctx, err := a.auth(ss.Context(), info.FullMethod)
+		if err != nil {
 			return err
 		}
-
+		ss = &authServerStream{ServerStream: ss, ctx: ctx}
 		return handler(srv, ss)
 	}
 }
 
-func (a *AuthInterceptor) auth(ctx context.Context, method string) error {
+func (a *AuthInterceptor) auth(ctx context.Context, method string) (context.Context, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return status.Errorf(codes.Unauthenticated, "metadata is not provided")
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
 	}
 
 	values, ok := md["authorization"]
 	if !ok || len(values) == 0 {
-		return status.Errorf(codes.Unauthenticated, "token is not provided")
+		return nil, status.Errorf(codes.Unauthenticated, "token is not provided")
 	}
 
 	token := values[0]
 	user, err := a.authValidator.Verify(ctx, token)
 	if err != nil {
-		return status.Errorf(codes.Unauthenticated, "token is invalid")
+		return nil, status.Errorf(codes.Unauthenticated, "token is invalid")
 	}
-	auth.WithAuth(ctx, user)
-	return nil
+	return auth.WithAuth(ctx, user), nil
+}
+
+type authServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s *authServerStream) Context() context.Context {
+	return s.ctx
 }
 
 func ParseUserDetails(ctx context.Context) UserInfo {
