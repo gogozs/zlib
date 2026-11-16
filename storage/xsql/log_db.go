@@ -3,7 +3,9 @@ package xsql
 import (
 	"context"
 	"database/sql"
+
 	"github.com/gogozs/zlib/xlog"
+	"github.com/jmoiron/sqlx"
 )
 
 type LogDB struct {
@@ -33,4 +35,8 @@ func (d LogDB) ExecContext(ctx context.Context, query string, args ...interface{
 		MsgItem("args", args).
 		Info(ctx, "[SQL] EXEC")
 	return d.db.ExecContext(ctx, query, args...)
+}
+
+func (d LogDB) Beginx() (*sqlx.Tx, error) {
+	return WrapTransaction(d.db).Beginx()
 }

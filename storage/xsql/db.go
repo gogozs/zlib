@@ -3,6 +3,7 @@ package xsql
 import (
 	"context"
 	"database/sql"
+
 	"github.com/gogozs/zlib/tools"
 	"github.com/jmoiron/sqlx"
 )
@@ -13,8 +14,16 @@ type DB interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-func DoTx(ctx context.Context, db *sqlx.DB, transactions ...func(db DB) error) (err error) {
+type TransactionDB interface {
+	DB
+	Beginx() (*sqlx.Tx, error)
+}
+
+func DoTx(ctx context.Context, db TransactionDB, transactions ...func(db DB) error) (err error) {
 	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			_ = tx.Rollback()
@@ -27,9 +36,6 @@ func DoTx(ctx context.Context, db *sqlx.DB, transactions ...func(db DB) error) (
 		}
 		err = tx.Commit()
 	}()
-	if err != nil {
-		return err
-	}
 	for _, f := range transactions {
 		if err = f(tx); err != nil {
 			return err
