@@ -34,7 +34,7 @@ func init() {
 		zapcore.AddSync(os.Stdout),
 		zapcore.InfoLevel,
 	)
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(2)) // skip calling stack
+	logger := zap.New(core, zap.AddCaller())
 	globalLogger = NewLogger(logger.Sugar())
 }
 
@@ -45,7 +45,7 @@ func SetLoggerLevel(level string) {
 		zapcore.AddSync(os.Stdout),
 		zapLevel,
 	)
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(2)) // skip calling stack
+	logger := zap.New(core, zap.AddCaller())
 	globalLogger = NewLogger(logger.Sugar())
 }
 
@@ -60,43 +60,70 @@ func Sync() {
 }
 
 func Debug(msg string, args ...interface{}) {
-	globalLogger.Debug(context.Background(), msg, args...)
+	logAtCaller(1).Debug(context.Background(), msg, args...)
 }
 
 func Info(msg string, args ...interface{}) {
-	globalLogger.Info(context.Background(), msg, args...)
+	logAtCaller(1).Info(context.Background(), msg, args...)
 }
 
 func Warn(msg string, args ...interface{}) {
-	globalLogger.Warn(context.Background(), msg, args...)
+	logAtCaller(1).Warn(context.Background(), msg, args...)
 }
 
 func Error(msg string, args ...interface{}) {
-	globalLogger.Error(context.Background(), msg, args...)
+	logAtCaller(1).Error(context.Background(), msg, args...)
 }
 
 func Fatal(msg string, args ...interface{}) {
-	globalLogger.Fatal(context.Background(), msg, args...)
+	logAtCaller(1).Fatal(context.Background(), msg, args...)
 }
 
 func DebugContext(ctx context.Context, msg string, args ...interface{}) {
-	globalLogger.Debug(ctx, msg, args...)
+	logAtCaller(1).Debug(ctx, msg, args...)
 }
 
 func InfoContext(ctx context.Context, msg string, args ...interface{}) {
-	globalLogger.Info(ctx, msg, args...)
+	logAtCaller(1).Info(ctx, msg, args...)
 }
 
 func WarnContext(ctx context.Context, msg string, args ...interface{}) {
-	globalLogger.Warn(ctx, msg, args...)
+	logAtCaller(1).Warn(ctx, msg, args...)
 }
 
 func ErrorContext(ctx context.Context, msg string, args ...interface{}) {
-	globalLogger.Error(ctx, msg, args...)
+	logAtCaller(1).Error(ctx, msg, args...)
 }
 
 func FatalContext(ctx context.Context, msg string, args ...interface{}) {
-	globalLogger.Fatal(ctx, msg, args...)
+	logAtCaller(1).Fatal(ctx, msg, args...)
+}
+
+// WithCallerSkip returns a logger that reports the caller above skip wrapper
+// functions. It is useful when a package provides logging helpers on behalf of
+// its callers (for example, a SQL wrapper logging a query issued by a DAO).
+func WithCallerSkip(logger ILogger, skip int) ILogger {
+	if skip <= 0 {
+		return logger
+	}
+	switch l := logger.(type) {
+	case Logger:
+		l.callerSkip += skip
+		return l
+	case *Logger:
+		if l == nil {
+			return logger
+		}
+		copy := *l
+		copy.callerSkip += skip
+		return copy
+	default:
+		return logger
+	}
+}
+
+func logAtCaller(skip int) ILogger {
+	return WithCallerSkip(globalLogger, skip)
 }
 
 func MsgItem(msg string, value interface{}) ILogger {

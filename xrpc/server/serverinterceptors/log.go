@@ -13,6 +13,7 @@ import (
 func LogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (
 	resp interface{}, err error) {
 	ctx = xlog.WrapTrace(ctx)
+	xlog.MsgItem("method", info.FullMethod).Info(ctx, "[REQUEST] started")
 	defer func(start time.Time) {
 		cost := fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 		reqStr := tools.ToJsonStringWithMaxLen(req, 1024)
